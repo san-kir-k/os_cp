@@ -11,6 +11,15 @@ namespace Seabattle {
     const int DESTROYER_C = 3;
     const int BOAT_C = 4;
 
+    const int BATTLESHIP = 4;
+    const int CRUISER = 3;
+    const int DESTROYER = 2;
+    const int BOAT = 1;
+    const int NONE = 0;
+    const int DEAD = -1;
+    const int SHOOTED = -2;
+    const int MISSED = -3;
+
     enum class cell_type {
         battleship, 
         cruiser, 
@@ -38,7 +47,6 @@ namespace Seabattle {
         left = 0,
         down = 1
     };
-
 
     const std::vector<std::vector<int> > v1_matrix =
     {{aa, aa, aa, ~v4, ~v4, ~v4},
@@ -422,7 +430,7 @@ namespace Seabattle {
 
     class Action {
         private:
-            std::vector<std::vector<int>> _map;
+            int** _map;
             struct cell_stats {
                 int health;
                 std::vector<std::pair<int, int>> coords;
@@ -430,6 +438,36 @@ namespace Seabattle {
                 direction dir;
             };
             std::vector<std::vector<cell_stats>> _stats_map;
+            void _map_update() {
+                for (int i = 0; i < MSIZE; ++i) {
+                    for (int j = 0; j < MSIZE; ++j) {
+                        if (_stats_map[i][j].type == cell_type::none) {
+                            _map[i][j] = NONE;
+                        }
+                        if (_stats_map[i][j].type == cell_type::battleship) {
+                            _map[i][j] = BATTLESHIP;
+                        }
+                        if (_stats_map[i][j].type == cell_type::cruiser) {
+                            _map[i][j] = CRUISER;
+                        }
+                        if (_stats_map[i][j].type == cell_type::destroyer) {
+                            _map[i][j] = DESTROYER;
+                        }
+                        if (_stats_map[i][j].type == cell_type::boat) {
+                            _map[i][j] = BOAT;
+                        }
+                        if (_stats_map[i][j].type == cell_type::dead) {
+                            _map[i][j] = DEAD;
+                        }
+                        if (_stats_map[i][j].type == cell_type::shooted) {
+                            _map[i][j] = SHOOTED;
+                        }
+                        if (_stats_map[i][j].type == cell_type::missed) {
+                            _map[i][j] = MISSED;
+                        }
+                    }
+                }
+            }
             void _death_update(int row, int col, int len) {
                 for (auto p: _stats_map[row][col].coords) {
                     _stats_map[p.first][p.second].type = cell_type::dead;
@@ -442,20 +480,20 @@ namespace Seabattle {
                     }
                     area_r = _stats_map[row][col].coords[len - 1].first;
                     area_c = _stats_map[row][col].coords[len - 1].second + 1;
-                    if (area_r < MSIZE && area_c > MSIZE) {
+                    if (area_r < MSIZE && area_c < MSIZE) {
                         _stats_map[area_r][area_c].type = cell_type::missed;
                     }
                     area_r = _stats_map[row][col].coords[0].first - 1;
                     for (int i = 0; i < len + 2; ++i) {
                         area_c = _stats_map[row][col].coords[0].second - 1 + i;
-                        if (area_r >= 0 && area_c >= 0 && area_r < MSIZE && area_c > MSIZE) {
+                        if (area_r >= 0 && area_c >= 0 && area_r < MSIZE && area_c < MSIZE) {
                             _stats_map[area_r][area_c].type = cell_type::missed;
                         }
                     }
                     area_r = _stats_map[row][col].coords[0].first + 1;
                     for (int i = 0; i < len + 2; ++i) {
                         area_c = _stats_map[row][col].coords[0].second - 1 + i;
-                        if (area_r >= 0 && area_c >= 0 && area_r < MSIZE && area_c > MSIZE) {
+                        if (area_r >= 0 && area_c >= 0 && area_r < MSIZE && area_c < MSIZE) {
                             _stats_map[area_r][area_c].type = cell_type::missed;
                         }
                     }
@@ -467,20 +505,20 @@ namespace Seabattle {
                     }
                     area_r = _stats_map[row][col].coords[len - 1].first + 1;
                     area_c = _stats_map[row][col].coords[len - 1].second;
-                    if (area_r < MSIZE && area_c > MSIZE) {
+                    if (area_r < MSIZE && area_c < MSIZE) {
                         _stats_map[area_r][area_c].type = cell_type::missed;
                     }
                     area_c = _stats_map[row][col].coords[0].second - 1;
                     for (int i = 0; i < len + 2; ++i) {
                         area_r = _stats_map[row][col].coords[0].first - 1 + i;
-                        if (area_r >= 0 && area_c >= 0 && area_r < MSIZE && area_c > MSIZE) {
+                        if (area_r >= 0 && area_c >= 0 && area_r < MSIZE && area_c < MSIZE) {
                             _stats_map[area_r][area_c].type = cell_type::missed;
                         }
                     }
                     area_c = _stats_map[row][col].coords[0].second + 1;
                     for (int i = 0; i < len + 2; ++i) {
                         area_r = _stats_map[row][col].coords[0].first - 1 + i;
-                        if (area_r >= 0 && area_c >= 0 && area_r < MSIZE && area_c > MSIZE) {
+                        if (area_r >= 0 && area_c >= 0 && area_r < MSIZE && area_c < MSIZE) {
                             _stats_map[area_r][area_c].type = cell_type::missed;
                         }
                     }
@@ -508,7 +546,7 @@ namespace Seabattle {
         public:
             Action() = default;
             Action(int** field) {
-                _map = std::vector<std::vector<int>>(MSIZE, std::vector<int> (MSIZE, 0));
+                _map = field;
                 _stats_map = std::vector<std::vector<cell_stats>>(MSIZE, std::vector<cell_stats> (MSIZE));
                 for (int i = 0; i < MSIZE; ++i) {
                     for (int j = 0; j < MSIZE; ++j) {
@@ -556,7 +594,7 @@ namespace Seabattle {
                 }
                 for (int i = 0; i < MSIZE; ++i) {
                     for (int j = 0; j < MSIZE; ++j) {
-                        if (_stats_map[i][j].type != cell_type::none && _stats_map[i][j].coords.size() != 0) {
+                        if (_stats_map[i][j].type != cell_type::none && _stats_map[i][j].coords.size() == 0) {
                             if (_stats_map[i][j].dir == direction::left) {
                                 int k = j;
                                 std::vector<std::pair<int, int>> tmp_coords;
@@ -593,12 +631,14 @@ namespace Seabattle {
                 }
                 if (_stats_map[row][col].type == cell_type::none) {
                     _stats_map[row][col].type = cell_type::missed;
+                    _map_update();
                 } 
                 if (_stats_map[row][col].type == cell_type::boat ||
                     _stats_map[row][col].type == cell_type::destroyer ||
                     _stats_map[row][col].type == cell_type::cruiser ||
                     _stats_map[row][col].type == cell_type::battleship) {
                     _shoot_update(row, col);
+                    _map_update();
                 }
             }
     };
