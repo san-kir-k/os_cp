@@ -430,6 +430,7 @@ namespace Seabattle {
 
     class Action {
         private:
+            int _count_of_alive;
             int** _map;
             struct cell_stats {
                 int health;
@@ -546,6 +547,7 @@ namespace Seabattle {
         public:
             Action() = default;
             Action(int** field) {
+                _count_of_alive = 0;
                 _map = field;
                 _stats_map = std::vector<std::vector<cell_stats>>(MSIZE, std::vector<cell_stats> (MSIZE));
                 for (int i = 0; i < MSIZE; ++i) {
@@ -556,10 +558,12 @@ namespace Seabattle {
                             _stats_map[i][j].type = cell_type::none;
                             _stats_map[i][j].dir = direction::none;
                         } else if (_map[i][j] == 1) {
+                            _count_of_alive++;
                             _stats_map[i][j].health = 1;
                             _stats_map[i][j].type = cell_type::boat;
                             _stats_map[i][j].dir = direction::none;
                         } else if (_map[i][j] == 2) {
+                            _count_of_alive++;
                             _stats_map[i][j].health = 2;
                             _stats_map[i][j].type = cell_type::destroyer;
                             if ((i + 1 < MSIZE && _map[i + 1][j] == 2) ||
@@ -570,6 +574,7 @@ namespace Seabattle {
                                 _stats_map[i][j].dir = direction::left;
                             }
                         } else if (_map[i][j] == 3) {
+                            _count_of_alive++;
                             _stats_map[i][j].health = 3;
                             _stats_map[i][j].type = cell_type::cruiser;
                             if ((i + 1 < MSIZE && _map[i + 1][j] == 3) ||
@@ -580,6 +585,7 @@ namespace Seabattle {
                                 _stats_map[i][j].dir = direction::left;
                             }
                         } else {
+                            _count_of_alive++;
                             _stats_map[i][j].health = 4;
                             _stats_map[i][j].type = cell_type::battleship;
                             if ((i + 1 < MSIZE && _map[i + 1][j] == 4) ||
@@ -637,9 +643,13 @@ namespace Seabattle {
                     _stats_map[row][col].type == cell_type::destroyer ||
                     _stats_map[row][col].type == cell_type::cruiser ||
                     _stats_map[row][col].type == cell_type::battleship) {
+                    _count_of_alive--;
                     _shoot_update(row, col);
                     _map_update();
                 }
+            }
+            bool is_gameover() {
+                return _count_of_alive == 0;
             }
     };
 }
