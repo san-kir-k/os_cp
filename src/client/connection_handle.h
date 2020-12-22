@@ -19,7 +19,7 @@ typedef enum {
 
 typedef struct {
     e_type type;
-    int** map;
+    int map[10][10];
 } init_event;
 
 typedef struct {
