@@ -190,10 +190,10 @@ namespace Seabattle {
         }
         return av_map;
     }
-    Battlefield::Battlefield():  battleship_v_slots(0), cruisers_v_slots(0),
-                    destroyers_v_slots(0), boats_v_slots(0),
-                    battleship_h_slots(0), cruisers_h_slots(0),
-                    destroyers_h_slots(0), boats_h_slots(0) {
+    Battlefield::Battlefield(): battleship_v_slots(0), cruisers_v_slots(0),
+                                destroyers_v_slots(0), boats_v_slots(0),
+                                battleship_h_slots(0), cruisers_h_slots(0),
+                                destroyers_h_slots(0), boats_h_slots(0) {
         _map = std::vector<std::vector<int>>(MSIZE, std::vector<int> (MSIZE, 0));
     };
     void Battlefield::gen_map() {

@@ -14,7 +14,8 @@
 
 typedef enum {
     init_event_enum,
-    loop_event_enum
+    loop_event_enum,
+    surr_event_enum
 } e_type;
 
 typedef struct {

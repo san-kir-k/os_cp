@@ -32,8 +32,7 @@ namespace Seabattle {
         left = 0,
         down = 1
     };
-    // + интеграция в СИ
-    // + добавить число кораблей еще живых (возможно)
+
     class Battlefield {
         private:
             std::vector<std::vector<int>> _map;

@@ -215,6 +215,42 @@ void print_enemy_map() {
     }
 }
 
+void print_endgame(bool is_win) {
+    int input_x;
+    int input_y;
+    wclear(INPUT_WIN);
+    flushinp();
+    echo();
+    cbreak();
+    curs_set(1);
+    getmaxyx(INPUT_WIN, input_y, input_x);
+    if (is_win) {
+        mvwprintw(INPUT_WIN, input_y / 4 + 1, input_x / 2 - 8, "Congrats, winner!");
+    } else {
+        mvwprintw(INPUT_WIN, input_y / 4 + 1, input_x / 2 - 13, "Unfortunately, you have lost!");
+    }
+    wgetch(INPUT_WIN);
+    curs_set(0);
+    noecho();
+    nocbreak();
+}
+
+void print_wait() {
+    int input_x;
+    int input_y;
+    wclear(INPUT_WIN);
+    flushinp();
+    echo();
+    cbreak();
+    curs_set(1);
+    getmaxyx(INPUT_WIN, input_y, input_x);
+    mvwprintw(INPUT_WIN, input_y / 4 + 1, input_x / 2 - 8, "Wait your turn...");
+    wrefresh(INPUT_WIN);
+    curs_set(0);
+    noecho();
+    nocbreak();
+}
+
 int parse_to_coords(char* buf, int* row, int* col) {
     *row = -1;
     *col = -1;
@@ -251,18 +287,14 @@ int parse_to_coords(char* buf, int* row, int* col) {
 void scanf_from_input(char* buf) {
     int input_x;
     int input_y;
-    // getmaxyx(INPUT_WIN, input_y, input_x);
-    // for (int j = 0; j < input_y; ++j) {
-    //     for (int i = 0; i < input_x; ++i) {
-    //         mvwdelch(INPUT_WIN, j, i);
-    //     }
-    // }
+    wclear(INPUT_WIN);
+    box(INPUT_WIN, 0, 0);
     flushinp();
     echo();
     cbreak();
     curs_set(1);
     getmaxyx(INPUT_WIN, input_y, input_x);
-    mvwgetnstr(INPUT_WIN, input_y / 4 + 1, (input_x - 17) / 2, buf, MAX_BUF_LEN);
+    mvwgetnstr(INPUT_WIN, input_y / 4 + 1, input_x / 2 - 2, buf, MAX_BUF_LEN);
     curs_set(0);
     noecho();
     nocbreak();
@@ -278,6 +310,8 @@ void refresh_maps(int** my_map, int** enemy_map) {
 }
 
 int init_gui(int** my_map, int** enemy_map) {
+    initscr();
+
     MY_STR_MAP = (char**)malloc(MAP_STR_HEIGHT * sizeof(char*));
     for (int i = 0; i < MAP_STR_HEIGHT; ++i) {
         MY_STR_MAP[i] = (char*)malloc(MAP_STR_WIDTH * sizeof(char));
@@ -290,16 +324,10 @@ int init_gui(int** my_map, int** enemy_map) {
     gen_my_str_map(MY_STR_MAP, my_map);
     gen_enemy_str_map(ENEMY_STR_MAP);
 
-    initscr();
     noecho();
     nocbreak();
     curs_set(0);
 
-    if ((LINES < 24) || (COLS < 98)) {
-        endwin();
-        printf("Your terminal needs to be at least 98x24");
-        return SMALL_SCREEN_ERR;
-    }
     clear();
 
     int maxx;
@@ -308,7 +336,7 @@ int init_gui(int** my_map, int** enemy_map) {
     MAP_WIN_HEIGHT = (maxy * 9) / 10;
     MAP_WIN_WIDTH = maxx / 3;
     INPUT_WIN_HEIGHT = maxy / 8;
-    INPUT_WIN_WIDTH = maxx / 5;
+    INPUT_WIN_WIDTH = maxx / 4;
 
     MY_MAP_START_X = (MAP_WIN_WIDTH - MAP_STR_WIDTH) / 2;
     MY_MAP_START_Y = MAP_WIN_HEIGHT / 4;
@@ -328,13 +356,13 @@ int init_gui(int** my_map, int** enemy_map) {
     mvwprintw(HELPER_WIN, MY_MAP_START_X + 9, (helper_x - 16) / 2, "~ - UNKNOWN CELL");
     mvwprintw(HELPER_WIN, MY_MAP_START_X + 11, (helper_x - 22) / 2, "TO SURRENDER ENTER \"-1\"");
     mvwprintw(HELPER_WIN, MY_MAP_START_X + 12, (helper_x - 24) / 2, "IN FIELD FOR INPUT COORDS");
+    mvwprintw(HELPER_WIN, MY_MAP_START_X + 14, (helper_x - 26) / 2, "ENTER COORDS IN FIELD BELOW");
 
     INPUT_WIN = newwin(INPUT_WIN_HEIGHT, INPUT_WIN_WIDTH, MAP_WIN_HEIGHT, 3 * MAP_WIN_WIDTH / 2 - INPUT_WIN_WIDTH / 2);
     box(INPUT_WIN, 0, 0);
     int input_x;
     int input_y;
     getmaxyx(INPUT_WIN, input_y, input_x);
-    mvwprintw(INPUT_WIN, input_y / 4 + 1, (input_x - 17) / 2, "ENTER COORDS HERE");
     wrefresh(INPUT_WIN);
 
     print_my_map();
@@ -346,8 +374,7 @@ int init_gui(int** my_map, int** enemy_map) {
     return ALL_OK;
 }
 
-void denit_gui() {
-    wgetch(INPUT_WIN);
+void deinit_gui() {
     for (int i = 0; i < MAP_STR_HEIGHT; ++i) {
         free(MY_STR_MAP[i]);
     }

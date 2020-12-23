@@ -7,22 +7,34 @@
 #include "connection_handle.h"
 #include "../gui/gui.h"
 
+// TODO: добавить еще один пакет типа (is_game_started) для терминала и гуи
+
 static char         hostname[STRLEN];
 static char         hostport[STRLEN] = "4040";
 static char         hostip[STRLEN];
+
 static void*        CONTEXT;
 static void*        SOCKET;
+
 static battlefield* MY_BF_PTR;
 static action*      MY_ACT_PTR;
 static int**        MY_MAP;
 static action*      ENEMY_ACT_PTR;
 static int**        ENEMY_MAP;
+
 static const int    MAP_SIZE = 10;
 
 typedef enum {
     host_enum = 2,
     client_enum = 1
 } gamemode;
+
+void clear_buf(char* buf) {
+    for (int i = 0; i < STRLEN; ++i) {
+        buf[i] = ' ';
+    }
+    buf[STRLEN - 1] = '\0';
+}
 
 void init_maps(int gamemode) {
     MY_MAP = (int**)malloc(MAP_SIZE * sizeof(int*));
@@ -83,101 +95,104 @@ void deinit_maps() {
     free(ENEMY_MAP);
 } 
 
-// DELETE LATER, JUST FOR TESTING
-void print() {
-    printf("=================MY_MAP===================\n");
-    for (int i = 0; i < 10; ++i) {
-        for (int j = 0; j < 10; ++j) {
-            printf("%-2d ", MY_MAP[i][j]);
-        }
-        printf("\n");
-    }
-    printf("==============END_OF_MY_MAP===============\n\n");
-    printf("###=============ENEMY_MAP==============###\n");
-    for (int i = 0; i < 10; ++i) {
-        for (int j = 0; j < 10; ++j) {
-            printf("%-2d ", ENEMY_MAP[i][j]);
-        }
-        printf("\n");
-    }
-    printf("###==========END_OF_ENEMY_MAP==========###\n");
-}
-// DELETE LATER, JUST FOR TESTING
-
 void host_loop() {
     if (init_host_socket(&CONTEXT, &SOCKET, hostip, hostport) != OK) {
         exit(CLIENT_ERR);
     }
 
     init_maps(host_enum);
-    print();
+
+    init_gui(MY_MAP, ENEMY_MAP);
     
+    char buf[STRLEN];
     while (true) {
+        clear_buf(buf);
         loop_event e;
         e.type = loop_event_enum;
 
-        printf("Enter row and col:\n");
-        scanf("%d%d", &(e.row), &(e.col));
-        send_loop_event_to(SOCKET, &e);
+        scanf_from_input(buf);
+        if (parse_to_coords(buf, &e.row, &e.col) == SURRENDER) {
+            e.type = surr_event_enum;
+            send_loop_event_to(SOCKET, &e);
+            recv_loop_event_from(SOCKET, &e);
+            print_endgame(false);
+            break;
+        }
         shoot(ENEMY_ACT_PTR, e.row, e.col);
-        if (is_gameover(ENEMY_ACT_PTR)) {
-            printf("Congrats, winner!\n");
-            break;
-        }
+        refresh_maps(MY_MAP, ENEMY_MAP); 
+        send_loop_event_to(SOCKET, &e);
+        print_wait();
         recv_loop_event_from(SOCKET, &e);
-        shoot(MY_ACT_PTR, e.row, e.col);
-        if (is_gameover(MY_ACT_PTR)) {
-            printf("Try again, probably next time you'll win!\n");
+        if (e.type == surr_event_enum) {
+            print_endgame(true);
             break;
         }
-        // JUST FOR TESTING DELETE LATER
-        if (e.row == -1) {
+        shoot(MY_ACT_PTR, e.row, e.col);
+        refresh_maps(MY_MAP, ENEMY_MAP);
+        if (is_gameover(ENEMY_ACT_PTR)) {
+            print_endgame(true);
             break;
-        } 
-        // print();
+        }
+        if (is_gameover(MY_ACT_PTR)) {
+            print_endgame(false);
+            break;
+        }
     }
 
     deinit_maps();
+    deinit_gui();
 
     if (deinit_socket(CONTEXT, SOCKET) != OK) {
         exit(CLIENT_ERR);
     }
 }
 
-void client_loop() {
-    if (init_client_socket(&CONTEXT, &SOCKET, hostip, hostport) != OK) {
+void client_loop(char* to_connect_ip) {
+    if (init_client_socket(&CONTEXT, &SOCKET, to_connect_ip, hostport) != OK) {
         exit(CLIENT_ERR);
     }
 
     init_maps(client_enum);
-    print();
 
+    init_gui(MY_MAP, ENEMY_MAP);
+
+    char buf[STRLEN];
     while (true) {
+        clear_buf(buf);
         loop_event e;
         e.type = loop_event_enum;
 
+        print_wait();
         recv_loop_event_from(SOCKET, &e);
-        shoot(MY_ACT_PTR, e.row, e.col);
-        if (is_gameover(MY_ACT_PTR)) {
-            printf("Try again, probably next time you'll win!\n");
+        if (e.type == surr_event_enum) {
+            send_loop_event_to(SOCKET, &e);
+            print_endgame(true);
             break;
         }
-        printf("Enter row and col:\n");
-        scanf("%d%d", &(e.row), &(e.col));
-        send_loop_event_to(SOCKET, &e);  
+        shoot(MY_ACT_PTR, e.row, e.col);
+        refresh_maps(MY_MAP, ENEMY_MAP);
+        scanf_from_input(buf);
+        if (parse_to_coords(buf, &e.row, &e.col) == SURRENDER) {
+            e.type = surr_event_enum;
+            send_loop_event_to(SOCKET, &e);
+            print_endgame(false);
+            break;
+        }
         shoot(ENEMY_ACT_PTR, e.row, e.col);
+        refresh_maps(MY_MAP, ENEMY_MAP); 
+        send_loop_event_to(SOCKET, &e); 
+        if (is_gameover(MY_ACT_PTR)) {
+            print_endgame(false);
+            break;
+        }
         if (is_gameover(ENEMY_ACT_PTR)) {
-            printf("Congrats, winner!\n");
+            print_endgame(true);
             break;
-        } 
-        // JUST FOR TESTING DELETE LATER
-        if (e.row == -1) {
-            break;
-        } 
-        // print();    
+        }   
     }
 
     deinit_maps();
+    deinit_gui();
 
     if (deinit_socket(CONTEXT, SOCKET) != OK) {
         exit(CLIENT_ERR);
@@ -194,7 +209,10 @@ void choose_gamemode() {
     int mode;
     scanf("%d", &mode);
     if (mode == client_enum) {
-        client_loop();
+        char to_connect_ip[STRLEN];
+        printf("Enter host's IP in local network:\n");
+        scanf("%s", to_connect_ip);
+        client_loop(to_connect_ip);
     } else {
         host_loop();
     }
