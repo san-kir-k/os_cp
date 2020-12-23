@@ -1,5 +1,7 @@
 #include "gui.h"
 
+static const int    MAX_BUF_LEN = 256;
+
 static const int    BATTLESHIP = 4;
 static const int    CRUISER = 3;
 static const int    DESTROYER = 2;
@@ -213,6 +215,59 @@ void print_enemy_map() {
     }
 }
 
+int parse_to_coords(char* buf, int* row, int* col) {
+    *row = -1;
+    *col = -1;
+    bool is_row = true;
+    for (int i = 0; i < MAX_BUF_LEN; ++i) {
+        if (buf[i] == ' ' || buf[i] == '\t') {
+            continue;
+        }
+        if ((*row == -1 || *col == -1) && buf[i] >= '0' && buf[i] <= '9') {
+            if (is_row) {
+                *row = buf[i] - '0';
+                is_row = false;
+                continue;
+            } else {
+                *col = buf[i] - '0';
+                break;
+            }
+        } if (buf[i] == '-' && i + 1 < MAX_BUF_LEN && buf[i + 1] == '1') {
+            if (*row == -1 && *col == -1) {
+                return SURRENDER;
+            } else {
+                return PARSE_ERR;
+            }
+        } else {
+            return PARSE_ERR;
+        }
+    }
+    if (*row == -1 || *col == -1) {
+        return PARSE_ERR;
+    }
+    return COORDS;
+}
+
+void scanf_from_input(char* buf) {
+    int input_x;
+    int input_y;
+    // getmaxyx(INPUT_WIN, input_y, input_x);
+    // for (int j = 0; j < input_y; ++j) {
+    //     for (int i = 0; i < input_x; ++i) {
+    //         mvwdelch(INPUT_WIN, j, i);
+    //     }
+    // }
+    flushinp();
+    echo();
+    cbreak();
+    curs_set(1);
+    getmaxyx(INPUT_WIN, input_y, input_x);
+    mvwgetnstr(INPUT_WIN, input_y / 4 + 1, (input_x - 17) / 2, buf, MAX_BUF_LEN);
+    curs_set(0);
+    noecho();
+    nocbreak();
+}
+
 void refresh_maps(int** my_map, int** enemy_map) {
     update_str_map(MY_STR_MAP, my_map);
     update_str_map(ENEMY_STR_MAP, enemy_map);
@@ -237,7 +292,7 @@ int init_gui(int** my_map, int** enemy_map) {
 
     initscr();
     noecho();
-    cbreak();
+    nocbreak();
     curs_set(0);
 
     if ((LINES < 24) || (COLS < 98)) {
@@ -271,6 +326,8 @@ int init_gui(int** my_map, int** enemy_map) {
     mvwprintw(HELPER_WIN, MY_MAP_START_X + 5, (helper_x - 20) / 2, "* - HITTING THE SHIP");
     mvwprintw(HELPER_WIN, MY_MAP_START_X + 7, (helper_x - 8) / 2, "# - MISS");
     mvwprintw(HELPER_WIN, MY_MAP_START_X + 9, (helper_x - 16) / 2, "~ - UNKNOWN CELL");
+    mvwprintw(HELPER_WIN, MY_MAP_START_X + 11, (helper_x - 22) / 2, "TO SURRENDER ENTER \"-1\"");
+    mvwprintw(HELPER_WIN, MY_MAP_START_X + 12, (helper_x - 24) / 2, "IN FIELD FOR INPUT COORDS");
 
     INPUT_WIN = newwin(INPUT_WIN_HEIGHT, INPUT_WIN_WIDTH, MAP_WIN_HEIGHT, 3 * MAP_WIN_WIDTH / 2 - INPUT_WIN_WIDTH / 2);
     box(INPUT_WIN, 0, 0);
@@ -286,7 +343,6 @@ int init_gui(int** my_map, int** enemy_map) {
     wrefresh(ENEMY_MAP_WIN);
     wrefresh(HELPER_WIN);
 
-    // wgetch(INPUT_WIN);
     return ALL_OK;
 }
 
