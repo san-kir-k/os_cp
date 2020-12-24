@@ -30,3 +30,7 @@
 *.exe
 *.out
 *.app
+
+# mine
+src_for_test
+.vscode
