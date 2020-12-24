@@ -1,6 +1,7 @@
 #include "connection_handle.h"
 
 static const int TIME_MS = 100;
+static const int TIME_TO_WAIT = 60000; // 1 min
 
 int get_hostinfo(char* hostname, char* hostip) {
     char hostbuffer[STRLEN]; 
@@ -24,40 +25,60 @@ int get_hostinfo(char* hostname, char* hostip) {
     return OK;
 }
 
-void send_loop_event_to(void* socket, loop_event* e) {
+int send_loop_event_to(void* socket, loop_event* e) {
     zmq_msg_t message;
     zmq_msg_init(&message);
     zmq_msg_init_size(&message, sizeof(loop_event));
     memcpy(zmq_msg_data(&message), e, sizeof(loop_event));
-    zmq_msg_send(&message, socket, 0);
+    zmq_setsockopt(socket, ZMQ_SNDTIMEO, &TIME_TO_WAIT, sizeof(TIME_TO_WAIT));
+    int sv = zmq_msg_send(&message, socket, 0);
+    if (sv == -1) {
+        return TIME_LIMIT_ERR;
+    }
     zmq_msg_close(&message);
+    return OK;
 }
 
-void send_init_event_to(void* socket, init_event* e) {
+int send_init_event_to(void* socket, init_event* e) {
     zmq_msg_t message;
     zmq_msg_init(&message);
     zmq_msg_init_size(&message, sizeof(init_event));
     memcpy(zmq_msg_data(&message), e, sizeof(init_event));
-    zmq_msg_send(&message, socket, 0);
+    zmq_setsockopt(socket, ZMQ_SNDTIMEO, &TIME_TO_WAIT, sizeof(TIME_TO_WAIT));
+    int sv = zmq_msg_send(&message, socket, 0);
+    if (sv == -1) {
+        return TIME_LIMIT_ERR;
+    }
     zmq_msg_close(&message);
+    return OK;
 }
 
-void recv_loop_event_from(void* socket, loop_event* e) {
+int recv_loop_event_from(void* socket, loop_event* e) {
     zmq_msg_t message;
     zmq_msg_init(&message);
     zmq_msg_init_size(&message, sizeof(loop_event));
-    zmq_msg_recv(&message, socket, 0);
+    zmq_setsockopt(socket, ZMQ_RCVTIMEO, &TIME_TO_WAIT, sizeof(TIME_TO_WAIT));
+    int rv = zmq_msg_recv(&message, socket, 0);
+    if (rv == -1) {
+        return TIME_LIMIT_ERR;
+    }
     memcpy(e, zmq_msg_data(&message), sizeof(loop_event));
     zmq_msg_close(&message);
+    return OK;
 }
 
-void recv_init_event_from(void* socket, init_event* e) {
+int recv_init_event_from(void* socket, init_event* e) {
     zmq_msg_t message;
     zmq_msg_init(&message);
     zmq_msg_init_size(&message, sizeof(init_event));
-    zmq_msg_recv(&message, socket, 0);
+    zmq_setsockopt(socket, ZMQ_RCVTIMEO, &TIME_TO_WAIT, sizeof(TIME_TO_WAIT));
+    int rv = zmq_msg_recv(&message, socket, 0);
+    if (rv == -1) {
+        return TIME_LIMIT_ERR;
+    }
     memcpy(e, zmq_msg_data(&message), sizeof(init_event));
     zmq_msg_close(&message);
+    return OK;
 }
 
 int init_host_socket(void** context, void** socket, char* ip, char* port) {

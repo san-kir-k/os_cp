@@ -64,11 +64,23 @@ void init_maps(int gamemode) {
     init_event enemy_e;
 
     if (gamemode == host_enum) {
-        send_init_event_to(SOCKET, &my_e);
-        recv_init_event_from(SOCKET, &enemy_e);
+        if (send_init_event_to(SOCKET, &my_e) == TIME_LIMIT_ERR) {
+            printf("Unable to connect to another player...\n");
+            exit(CLIENT_ERR);
+        }
+        if (recv_init_event_from(SOCKET, &enemy_e) == TIME_LIMIT_ERR) {
+            printf("Unable to connect to another player...\n");
+            exit(CLIENT_ERR);
+        }
     } else {
-        recv_init_event_from(SOCKET, &enemy_e);
-        send_init_event_to(SOCKET, &my_e);
+        if (recv_init_event_from(SOCKET, &enemy_e) == TIME_LIMIT_ERR) {
+            printf("Unable to connect to another player...\n");
+            exit(CLIENT_ERR);
+        }
+        if (send_init_event_to(SOCKET, &my_e) == TIME_LIMIT_ERR) {
+            printf("Unable to connect to another player...\n");
+            exit(CLIENT_ERR);
+        }
     }
 
     for (int i = 0; i < MAP_SIZE; ++i) {
@@ -134,20 +146,35 @@ void host_loop() {
 
         shoot(ENEMY_ACT_PTR, e.row, e.col);
         refresh_maps(MY_MAP, ENEMY_MAP); 
-        send_loop_event_to(SOCKET, &e);
+        if (is_gameover(ENEMY_ACT_PTR)) {
+            e.type = win_event_enum;
+            if (send_loop_event_to(SOCKET, &e) == TIME_LIMIT_ERR) {
+                print_msg("Send time limit!", 16, true);    
+                break;     
+            }
+            if (recv_loop_event_from(SOCKET, &e) == TIME_LIMIT_ERR) {
+                print_msg("Recv time limit!", 16, true);     
+                break;        
+            }
+            print_msg("Congrats, winner!", 16, true);
+            break;
+        }
+        if (send_loop_event_to(SOCKET, &e) == TIME_LIMIT_ERR) {
+            print_msg("Send time limit!", 16, true);
+            break;            
+        }
         print_msg("Wait your turn...", 16, false);
-        recv_loop_event_from(SOCKET, &e);
+        if (recv_loop_event_from(SOCKET, &e) == TIME_LIMIT_ERR) {
+            print_msg("Recv time limit!", 16, true);
+            break;               
+        }
         if (e.type == surr_event_enum) {
             print_msg("Congrats, winner!", 16, true);
             break;
         }
         shoot(MY_ACT_PTR, e.row, e.col);
         refresh_maps(MY_MAP, ENEMY_MAP);
-        if (is_gameover(ENEMY_ACT_PTR)) {
-            print_msg("Congrats, winner!", 16, true);
-            break;
-        }
-        if (is_gameover(MY_ACT_PTR)) {
+        if (e.type == win_event_enum) {
             print_msg("You have lost!", 12, true);
             break;
         }
@@ -176,7 +203,18 @@ void client_loop(char* to_connect_ip) {
         e.type = loop_event_enum;
 
         print_msg("Wait your turn...", 16, false);
-        recv_loop_event_from(SOCKET, &e);
+        if (recv_loop_event_from(SOCKET, &e) == TIME_LIMIT_ERR) {
+            print_msg("Recv time limit!", 16, true);
+            break;   
+        }
+        if (e.type == win_event_enum) {
+            if (send_loop_event_to(SOCKET, &e) == TIME_LIMIT_ERR) {
+                print_msg("Send time limit!", 16, true);   
+                break;      
+            }
+            print_msg("You have lost!", 12, true);
+            break;
+        }
         if (e.type == surr_event_enum) {
             send_loop_event_to(SOCKET, &e);
             print_msg("Congrats, winner!", 16, true);
@@ -208,15 +246,19 @@ void client_loop(char* to_connect_ip) {
 
         shoot(ENEMY_ACT_PTR, e.row, e.col);
         refresh_maps(MY_MAP, ENEMY_MAP); 
-        send_loop_event_to(SOCKET, &e);
-        if (is_gameover(MY_ACT_PTR)) {
-            print_msg("You have lost!", 12, true);
-            break;
-        }
         if (is_gameover(ENEMY_ACT_PTR)) {
+            e.type = win_event_enum;
+            if (send_loop_event_to(SOCKET, &e) == TIME_LIMIT_ERR) {
+                print_msg("Send time limit!", 16, true);    
+                break;     
+            }
             print_msg("Congrats, winner!", 16, true);
             break;
-        }   
+        }
+        if (send_loop_event_to(SOCKET, &e) == TIME_LIMIT_ERR) {
+            print_msg("Send time limit!", 16, true);
+            break;   
+        } 
     }
 
     deinit_maps();

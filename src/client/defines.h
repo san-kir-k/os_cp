@@ -15,6 +15,8 @@
 #define CLIENT_REP_CREATE_ERR -5
 #define CLIENT_REP_CONNECT_ERR -6
 
+#define TIME_LIMIT_ERR -1
+
 #define CTX_CLOSE_ERR -1
 #define SOCKET_CLOSE_ERR -2
 

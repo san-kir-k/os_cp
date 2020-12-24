@@ -1,7 +1,7 @@
 #pragma once
 #include <stdbool.h>
 
-struct battlefield; // пустая ли это структура? // объявление ли это?
+struct battlefield;
 typedef struct battlefield battlefield;
 
 struct action;
