@@ -43,6 +43,7 @@ WINDOW*             HELPER_WIN;
 #define STANDART_PAIR   2
 #define NONE_PAIR       3
 #define HITTING_PAIR    4
+#define DEAD_PAIR       5
 
 void gen_my_str_map(char** str_map, int** map) {
     for (int i = 0; i < MAP_STR_HEIGHT; ++i) {
@@ -204,6 +205,8 @@ void print_my_map() {
                 wattron(MY_MAP_WIN, COLOR_PAIR(NONE_PAIR));
             } else if (MY_STR_MAP[i][j] == SHOOTED_CHAR) {
                 wattron(MY_MAP_WIN, COLOR_PAIR(HITTING_PAIR));
+            } else if (MY_STR_MAP[i][j] == DEAD_CHAR) {
+                wattron(MY_MAP_WIN, COLOR_PAIR(DEAD_PAIR));
             } else {
                 wattron(MY_MAP_WIN, COLOR_PAIR(STANDART_PAIR));
             }
@@ -213,6 +216,8 @@ void print_my_map() {
                 wattroff(MY_MAP_WIN, COLOR_PAIR(NONE_PAIR));
             } else if (MY_STR_MAP[i][j] == SHOOTED_CHAR) {
                 wattroff(MY_MAP_WIN, COLOR_PAIR(HITTING_PAIR));
+            } else if (MY_STR_MAP[i][j] == DEAD_CHAR) {
+                wattroff(MY_MAP_WIN, COLOR_PAIR(DEAD_PAIR));
             } else {
                 wattroff(MY_MAP_WIN, COLOR_PAIR(STANDART_PAIR));
             }
@@ -233,6 +238,8 @@ void print_enemy_map() {
                 wattron(ENEMY_MAP_WIN, COLOR_PAIR(NONE_PAIR));
             } else if (ENEMY_STR_MAP[i][j] == SHOOTED_CHAR) {
                 wattron(ENEMY_MAP_WIN, COLOR_PAIR(HITTING_PAIR));
+            } else if (ENEMY_STR_MAP[i][j] == DEAD_CHAR) {
+                wattron(ENEMY_MAP_WIN, COLOR_PAIR(DEAD_PAIR));
             } else {
                 wattron(ENEMY_MAP_WIN, COLOR_PAIR(STANDART_PAIR));
             }
@@ -242,6 +249,8 @@ void print_enemy_map() {
                 wattroff(ENEMY_MAP_WIN, COLOR_PAIR(NONE_PAIR));
             } else if (ENEMY_STR_MAP[i][j] == SHOOTED_CHAR) {
                 wattroff(ENEMY_MAP_WIN, COLOR_PAIR(HITTING_PAIR));
+            } else if (ENEMY_STR_MAP[i][j] == DEAD_CHAR) {
+                wattroff(ENEMY_MAP_WIN, COLOR_PAIR(DEAD_PAIR));
             } else {
                 wattroff(ENEMY_MAP_WIN, COLOR_PAIR(STANDART_PAIR));
             }
@@ -351,6 +360,7 @@ int init_gui(int** my_map, int** enemy_map) {
     init_pair(STANDART_PAIR, COLOR_BLACK, COLOR_WHITE);
     init_pair(NONE_PAIR, COLOR_CYAN, COLOR_WHITE);
     init_pair(HITTING_PAIR, COLOR_RED, COLOR_WHITE);
+    init_pair(DEAD_PAIR, COLOR_BLUE, COLOR_WHITE);
 
     MY_STR_MAP = (char**)malloc(MAP_STR_HEIGHT * sizeof(char*));
     for (int i = 0; i < MAP_STR_HEIGHT; ++i) {
