@@ -39,6 +39,11 @@ WINDOW*             ENEMY_MAP_WIN;
 WINDOW*             INPUT_WIN;
 WINDOW*             HELPER_WIN;
 
+#define EMPTY_PAIR      0
+#define STANDART_PAIR   1
+#define NONE_PAIR       2
+#define HITTING_PAIR    3
+
 void gen_my_str_map(char** str_map, int** map) {
     for (int i = 0; i < MAP_STR_HEIGHT; ++i) {
         for (int j = 0; j < MAP_STR_WIDTH; ++j) {
@@ -190,35 +195,74 @@ void update_str_map(char** str_map, int** map) {
 }
 
 void print_my_map() {
+    wattroff(MY_MAP_WIN, COLOR_PAIR(STANDART_PAIR));
     int curr_y = MY_MAP_START_Y;
     int curr_x = MY_MAP_START_X;
     for (int i = 0; i < MAP_STR_HEIGHT; ++i) {
         for (int j = 0; j < MAP_STR_WIDTH; ++j) {
+            if (MY_STR_MAP[i][j] == NONE_CHAR) {
+                wattron(MY_MAP_WIN, COLOR_PAIR(NONE_PAIR));
+            } else if (MY_STR_MAP[i][j] == SHOOTED_CHAR) {
+                wattron(MY_MAP_WIN, COLOR_PAIR(HITTING_PAIR));
+            } else {
+                wattron(MY_MAP_WIN, COLOR_PAIR(STANDART_PAIR));
+            }
             mvwaddch(MY_MAP_WIN, curr_y, curr_x, MY_STR_MAP[i][j]);
             curr_x++;
+            if (MY_STR_MAP[i][j] == NONE_CHAR) {
+                wattroff(MY_MAP_WIN, COLOR_PAIR(NONE_PAIR));
+            } else if (MY_STR_MAP[i][j] == SHOOTED_CHAR) {
+                wattroff(MY_MAP_WIN, COLOR_PAIR(HITTING_PAIR));
+            } else {
+                wattroff(MY_MAP_WIN, COLOR_PAIR(STANDART_PAIR));
+            }
         }
         curr_y++;
         curr_x = MY_MAP_START_X;
     }
+    wattron(MY_MAP_WIN, COLOR_PAIR(STANDART_PAIR));
 }
 
 void print_enemy_map() {
+    wattroff(ENEMY_MAP_WIN, COLOR_PAIR(STANDART_PAIR));
     int curr_y = ENEMY_MAP_START_Y;
     int curr_x = ENEMY_MAP_START_X;
     for (int i = 0; i < MAP_STR_HEIGHT; ++i) {
         for (int j = 0; j < MAP_STR_WIDTH; ++j) {
+            if (ENEMY_STR_MAP[i][j] == NONE_CHAR) {
+                wattron(ENEMY_MAP_WIN, COLOR_PAIR(NONE_PAIR));
+            } else if (ENEMY_STR_MAP[i][j] == SHOOTED_CHAR) {
+                wattron(ENEMY_MAP_WIN, COLOR_PAIR(HITTING_PAIR));
+            } else {
+                wattron(ENEMY_MAP_WIN, COLOR_PAIR(STANDART_PAIR));
+            }
             mvwaddch(ENEMY_MAP_WIN, curr_y, curr_x, ENEMY_STR_MAP[i][j]);
             curr_x++;
+            if (ENEMY_STR_MAP[i][j] == NONE_CHAR) {
+                wattroff(ENEMY_MAP_WIN, COLOR_PAIR(NONE_PAIR));
+            } else if (ENEMY_STR_MAP[i][j] == SHOOTED_CHAR) {
+                wattroff(ENEMY_MAP_WIN, COLOR_PAIR(HITTING_PAIR));
+            } else {
+                wattroff(ENEMY_MAP_WIN, COLOR_PAIR(STANDART_PAIR));
+            }
         }
         curr_y++;
         curr_x = ENEMY_MAP_START_X;
     }
+    wattron(ENEMY_MAP_WIN, COLOR_PAIR(STANDART_PAIR));
 }
 
 void print_msg(char* msg, int len, bool is_wgetch) {
     int input_x;
     int input_y;
     wclear(INPUT_WIN);
+    getmaxyx(INPUT_WIN, input_y, input_x);
+    wattron(INPUT_WIN, COLOR_PAIR(EMPTY_PAIR));
+    for (int y = 0; y < input_y; y++) {
+        mvwhline(INPUT_WIN, y, 0, ' ', input_x);
+    }
+    wattroff(INPUT_WIN, COLOR_PAIR(EMPTY_PAIR));
+    wattron(INPUT_WIN, COLOR_PAIR(EMPTY_PAIR));
     flushinp();
     echo();
     cbreak();
@@ -271,12 +315,18 @@ void scanf_from_input(char* buf) {
     int input_x;
     int input_y;
     wclear(INPUT_WIN);
+    getmaxyx(INPUT_WIN, input_y, input_x);
+    wattron(INPUT_WIN, COLOR_PAIR(EMPTY_PAIR));
+    for (int y = 0; y < input_y; y++) {
+        mvwhline(INPUT_WIN, y, 0, ' ', input_x);
+    }
+    wattroff(INPUT_WIN, COLOR_PAIR(EMPTY_PAIR));
+    wattron(INPUT_WIN, COLOR_PAIR(EMPTY_PAIR));
     box(INPUT_WIN, 0, 0);
     flushinp();
     echo();
     cbreak();
     curs_set(1);
-    getmaxyx(INPUT_WIN, input_y, input_x);
     mvwgetnstr(INPUT_WIN, input_y / 4 + 1, input_x / 2 - 2, buf, MAX_BUF_LEN);
     curs_set(0);
     noecho();
@@ -294,6 +344,12 @@ void refresh_maps(int** my_map, int** enemy_map) {
 
 int init_gui(int** my_map, int** enemy_map) {
     initscr();
+
+    start_color();
+    init_pair(EMPTY_PAIR, COLOR_WHITE, COLOR_WHITE);
+    init_pair(STANDART_PAIR, COLOR_BLACK, COLOR_WHITE);
+    init_pair(NONE_PAIR, COLOR_CYAN, COLOR_WHITE);
+    init_pair(HITTING_PAIR, COLOR_RED, COLOR_WHITE);
 
     MY_STR_MAP = (char**)malloc(MAP_STR_HEIGHT * sizeof(char*));
     for (int i = 0; i < MAP_STR_HEIGHT; ++i) {
@@ -316,6 +372,13 @@ int init_gui(int** my_map, int** enemy_map) {
     int maxx;
     int maxy;
     getmaxyx(stdscr, maxy, maxx);
+    wattron(stdscr, COLOR_PAIR(EMPTY_PAIR));
+    for (int y = 0; y < maxy; y++) {
+        mvhline(y, 0, ' ', maxx);
+    }
+    wrefresh(stdscr);
+    wattroff(stdscr, COLOR_PAIR(EMPTY_PAIR));
+
     MAP_WIN_HEIGHT = (maxy * 9) / 10;
     MAP_WIN_WIDTH = maxx / 3;
     INPUT_WIN_HEIGHT = maxy / 8;
@@ -327,8 +390,32 @@ int init_gui(int** my_map, int** enemy_map) {
     ENEMY_MAP_START_Y = MAP_WIN_HEIGHT / 4;
 
     MY_MAP_WIN = newwin(MAP_WIN_HEIGHT, MAP_WIN_WIDTH, 0, 0);
+    getmaxyx(MY_MAP_WIN, maxy, maxx);
+    wattron(MY_MAP_WIN, COLOR_PAIR(EMPTY_PAIR));
+    for (int y = 0; y < maxy; y++) {
+        mvwhline(MY_MAP_WIN, y, 0, ' ', maxx);
+    }
+    wattroff(MY_MAP_WIN, COLOR_PAIR(EMPTY_PAIR));
+    wattron(MY_MAP_WIN, COLOR_PAIR(STANDART_PAIR));
+
     ENEMY_MAP_WIN = newwin(MAP_WIN_HEIGHT, MAP_WIN_WIDTH, 0, 2 * MAP_WIN_WIDTH);
+    getmaxyx(ENEMY_MAP_WIN, maxy, maxx);
+    wattron(ENEMY_MAP_WIN, COLOR_PAIR(EMPTY_PAIR));
+    for (int y = 0; y < maxy; y++) {
+        mvwhline(ENEMY_MAP_WIN, y, 0, ' ', maxx);
+    }
+    wattroff(ENEMY_MAP_WIN, COLOR_PAIR(EMPTY_PAIR));
+    wattron(ENEMY_MAP_WIN, COLOR_PAIR(STANDART_PAIR));
+
     HELPER_WIN = newwin(MAP_WIN_HEIGHT, MAP_WIN_WIDTH, 0, MAP_WIN_WIDTH);
+    getmaxyx(HELPER_WIN, maxy, maxx);
+    wattron(HELPER_WIN, COLOR_PAIR(EMPTY_PAIR));
+    for (int y = 0; y < maxy; y++) {
+        mvwhline(HELPER_WIN, y, 0, ' ', maxx);
+    }
+    wattroff(HELPER_WIN, COLOR_PAIR(EMPTY_PAIR));
+    wattron(HELPER_WIN, COLOR_PAIR(STANDART_PAIR));
+
     int helper_x;
     int helper_y;
     getmaxyx(HELPER_WIN, helper_y, helper_x);
@@ -342,7 +429,15 @@ int init_gui(int** my_map, int** enemy_map) {
     mvwprintw(HELPER_WIN, MY_MAP_START_X + 14, (helper_x - 26) / 2, "ENTER COORDS IN FIELD BELOW");
 
     INPUT_WIN = newwin(INPUT_WIN_HEIGHT, INPUT_WIN_WIDTH, MAP_WIN_HEIGHT, 3 * MAP_WIN_WIDTH / 2 - INPUT_WIN_WIDTH / 2);
+    getmaxyx(INPUT_WIN, maxy, maxx);
+    wattron(INPUT_WIN, COLOR_PAIR(EMPTY_PAIR));
+    for (int y = 0; y < maxy; y++) {
+        mvwhline(INPUT_WIN, y, 0, ' ', maxx);
+    }
+    wattroff(INPUT_WIN, COLOR_PAIR(EMPTY_PAIR));
+    wattron(INPUT_WIN, COLOR_PAIR(EMPTY_PAIR));
     box(INPUT_WIN, 0, 0);
+
     int input_x;
     int input_y;
     getmaxyx(INPUT_WIN, input_y, input_x);
