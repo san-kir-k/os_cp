@@ -7,9 +7,6 @@
 #include "connection_handle.h"
 #include "../gui/gui.h"
 
-// *TODO: добавить цвета
-// TODO: отчеты 
-
 static char         hostname[STRLEN];
 static char         hostport[STRLEN] = "4040";
 static char         hostip[STRLEN];
