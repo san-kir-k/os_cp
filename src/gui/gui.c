@@ -215,7 +215,7 @@ void print_enemy_map() {
     }
 }
 
-void print_endgame(bool is_win) {
+void print_msg(char* msg, int len, bool is_wgetch) {
     int input_x;
     int input_y;
     wclear(INPUT_WIN);
@@ -224,28 +224,11 @@ void print_endgame(bool is_win) {
     cbreak();
     curs_set(1);
     getmaxyx(INPUT_WIN, input_y, input_x);
-    if (is_win) {
-        mvwprintw(INPUT_WIN, input_y / 4 + 1, input_x / 2 - 8, "Congrats, winner!");
-    } else {
-        mvwprintw(INPUT_WIN, input_y / 4 + 1, input_x / 2 - 13, "Unfortunately, you have lost!");
-    }
-    wgetch(INPUT_WIN);
-    curs_set(0);
-    noecho();
-    nocbreak();
-}
-
-void print_wait() {
-    int input_x;
-    int input_y;
-    wclear(INPUT_WIN);
-    flushinp();
-    echo();
-    cbreak();
-    curs_set(1);
-    getmaxyx(INPUT_WIN, input_y, input_x);
-    mvwprintw(INPUT_WIN, input_y / 4 + 1, input_x / 2 - 8, "Wait your turn...");
+    mvwprintw(INPUT_WIN, input_y / 4 + 1, input_x / 2 - len / 2, msg);
     wrefresh(INPUT_WIN);
+    if (is_wgetch) {
+        wgetch(INPUT_WIN);
+    }
     curs_set(0);
     noecho();
     nocbreak();
