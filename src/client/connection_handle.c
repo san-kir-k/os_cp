@@ -1,7 +1,7 @@
 #include "connection_handle.h"
 
 static const int TIME_MS = 100;
-static const int TIME_TO_WAIT = 60000; // 1 min
+static const int TIME_TO_WAIT = 120000; // 2 min
 
 int get_hostinfo(char* hostname, char* hostip) {
     char hostbuffer[STRLEN]; 
@@ -22,7 +22,7 @@ int get_hostinfo(char* hostname, char* hostip) {
     ipbuffer = inet_ntoa(*((struct in_addr*)host_entry->h_addr_list[0])); 
     strcpy(hostname, hostbuffer);
     strcpy(hostip, ipbuffer);
-    return OK;
+    return ALL_OK;
 }
 
 int send_loop_event_to(void* socket, loop_event* e) {
@@ -36,7 +36,7 @@ int send_loop_event_to(void* socket, loop_event* e) {
         return TIME_LIMIT_ERR;
     }
     zmq_msg_close(&message);
-    return OK;
+    return ALL_OK;
 }
 
 int send_init_event_to(void* socket, init_event* e) {
@@ -50,7 +50,7 @@ int send_init_event_to(void* socket, init_event* e) {
         return TIME_LIMIT_ERR;
     }
     zmq_msg_close(&message);
-    return OK;
+    return ALL_OK;
 }
 
 int recv_loop_event_from(void* socket, loop_event* e) {
@@ -64,7 +64,7 @@ int recv_loop_event_from(void* socket, loop_event* e) {
     }
     memcpy(e, zmq_msg_data(&message), sizeof(loop_event));
     zmq_msg_close(&message);
-    return OK;
+    return ALL_OK;
 }
 
 int recv_init_event_from(void* socket, init_event* e) {
@@ -78,7 +78,7 @@ int recv_init_event_from(void* socket, init_event* e) {
     }
     memcpy(e, zmq_msg_data(&message), sizeof(init_event));
     zmq_msg_close(&message);
-    return OK;
+    return ALL_OK;
 }
 
 int init_host_socket(void** context, void** socket, char* ip, char* port) {
@@ -106,7 +106,7 @@ int init_host_socket(void** context, void** socket, char* ip, char* port) {
         return HOST_REQ_BIND_ERR;
     }
     *socket = request;
-    return OK;
+    return ALL_OK;
 }
 
 int init_client_socket(void** context, void** socket, char* ip, char* port) {
@@ -135,7 +135,7 @@ int init_client_socket(void** context, void** socket, char* ip, char* port) {
         return HOST_REQ_BIND_ERR;
     }
     *socket = reply;
-    return OK;
+    return ALL_OK;
 }   
 
 int deinit_socket(void* context, void* socket) {
@@ -147,5 +147,5 @@ int deinit_socket(void* context, void* socket) {
         perror("ERROR, zmq_ctx_term");
         return CTX_CLOSE_ERR;        
     }
-    return OK;
+    return ALL_OK;
 }

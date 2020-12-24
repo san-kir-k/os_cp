@@ -39,10 +39,10 @@ WINDOW*             ENEMY_MAP_WIN;
 WINDOW*             INPUT_WIN;
 WINDOW*             HELPER_WIN;
 
-#define EMPTY_PAIR      0
-#define STANDART_PAIR   1
-#define NONE_PAIR       2
-#define HITTING_PAIR    3
+#define EMPTY_PAIR      1
+#define STANDART_PAIR   2
+#define NONE_PAIR       3
+#define HITTING_PAIR    4
 
 void gen_my_str_map(char** str_map, int** map) {
     for (int i = 0; i < MAP_STR_HEIGHT; ++i) {
@@ -262,7 +262,7 @@ void print_msg(char* msg, int len, bool is_wgetch) {
         mvwhline(INPUT_WIN, y, 0, ' ', input_x);
     }
     wattroff(INPUT_WIN, COLOR_PAIR(EMPTY_PAIR));
-    wattron(INPUT_WIN, COLOR_PAIR(EMPTY_PAIR));
+    wattron(INPUT_WIN, COLOR_PAIR(STANDART_PAIR));
     flushinp();
     echo();
     cbreak();
@@ -321,8 +321,9 @@ void scanf_from_input(char* buf) {
         mvwhline(INPUT_WIN, y, 0, ' ', input_x);
     }
     wattroff(INPUT_WIN, COLOR_PAIR(EMPTY_PAIR));
-    wattron(INPUT_WIN, COLOR_PAIR(EMPTY_PAIR));
+    wattron(INPUT_WIN, COLOR_PAIR(STANDART_PAIR));
     box(INPUT_WIN, 0, 0);
+    wrefresh(INPUT_WIN);
     flushinp();
     echo();
     cbreak();
@@ -435,7 +436,7 @@ int init_gui(int** my_map, int** enemy_map) {
         mvwhline(INPUT_WIN, y, 0, ' ', maxx);
     }
     wattroff(INPUT_WIN, COLOR_PAIR(EMPTY_PAIR));
-    wattron(INPUT_WIN, COLOR_PAIR(EMPTY_PAIR));
+    wattron(INPUT_WIN, COLOR_PAIR(STANDART_PAIR));
     box(INPUT_WIN, 0, 0);
 
     int input_x;

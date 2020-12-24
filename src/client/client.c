@@ -109,7 +109,7 @@ void deinit_maps() {
 } 
 
 void host_loop() {
-    if (init_host_socket(&CONTEXT, &SOCKET, hostip, hostport) != OK) {
+    if (init_host_socket(&CONTEXT, &SOCKET, hostip, hostport) != ALL_OK) {
         exit(CLIENT_ERR);
     }
 
@@ -183,13 +183,13 @@ void host_loop() {
     deinit_maps();
     deinit_gui();
 
-    if (deinit_socket(CONTEXT, SOCKET) != OK) {
+    if (deinit_socket(CONTEXT, SOCKET) != ALL_OK) {
         exit(CLIENT_ERR);
     }
 }
 
 void client_loop(char* to_connect_ip) {
-    if (init_client_socket(&CONTEXT, &SOCKET, to_connect_ip, hostport) != OK) {
+    if (init_client_socket(&CONTEXT, &SOCKET, to_connect_ip, hostport) != ALL_OK) {
         exit(CLIENT_ERR);
     }
 
@@ -264,13 +264,13 @@ void client_loop(char* to_connect_ip) {
     deinit_maps();
     deinit_gui();
 
-    if (deinit_socket(CONTEXT, SOCKET) != OK) {
+    if (deinit_socket(CONTEXT, SOCKET) != ALL_OK) {
         exit(CLIENT_ERR);
     }
 }
 
 void choose_gamemode() {
-    if (get_hostinfo(hostname, hostip) != OK) {
+    if (get_hostinfo(hostname, hostip) != ALL_OK) {
         exit(CLIENT_ERR);
     }
     printf("Your host name: %s\n", hostname);

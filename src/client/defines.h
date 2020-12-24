@@ -2,7 +2,7 @@
 
 #define STRLEN 256
 
-#define OK 0
+#define ALL_OK 0
 
 #define GET_HOST_NAME_ERR -1
 #define GET_HOST_IP_ERR -2
