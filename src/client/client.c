@@ -7,7 +7,8 @@
 #include "connection_handle.h"
 #include "../gui/gui.h"
 
-// TODO: добавить еще один пакет типа (is_game_started) для терминала и гуи
+// *TODO: добавить цвета
+// TODO: отчеты 
 
 static char         hostname[STRLEN];
 static char         hostport[STRLEN] = "4040";
@@ -106,35 +107,48 @@ void host_loop() {
     
     char buf[STRLEN];
     while (true) {
-        clear_buf(buf);
         loop_event e;
         e.type = loop_event_enum;
 
-        scanf_from_input(buf);
-        if (parse_to_coords(buf, &e.row, &e.col) == SURRENDER) {
-            e.type = surr_event_enum;
-            send_loop_event_to(SOCKET, &e);
-            recv_loop_event_from(SOCKET, &e);
-            print_endgame(false);
+        bool is_surr = false;
+        while (true) {
+            clear_buf(buf);
+            scanf_from_input(buf);
+            int pv = parse_to_coords(buf, &e.row, &e.col);
+            if (pv == COORDS) {
+                break;
+            } else if (pv == SURRENDER) {
+                e.type = surr_event_enum;
+                send_loop_event_to(SOCKET, &e);
+                recv_loop_event_from(SOCKET, &e);
+                print_msg("You have lost!", 12, true);
+                is_surr = true;
+                break;
+            } else {
+                print_msg("Invalid coords", 12, true);
+            }
+        }
+        if (is_surr) {
             break;
         }
+
         shoot(ENEMY_ACT_PTR, e.row, e.col);
         refresh_maps(MY_MAP, ENEMY_MAP); 
         send_loop_event_to(SOCKET, &e);
-        print_wait();
+        print_msg("Wait your turn...", 16, false);
         recv_loop_event_from(SOCKET, &e);
         if (e.type == surr_event_enum) {
-            print_endgame(true);
+            print_msg("Congrats, winner!", 16, true);
             break;
         }
         shoot(MY_ACT_PTR, e.row, e.col);
         refresh_maps(MY_MAP, ENEMY_MAP);
         if (is_gameover(ENEMY_ACT_PTR)) {
-            print_endgame(true);
+            print_msg("Congrats, winner!", 16, true);
             break;
         }
         if (is_gameover(MY_ACT_PTR)) {
-            print_endgame(false);
+            print_msg("You have lost!", 12, true);
             break;
         }
     }
@@ -158,35 +172,49 @@ void client_loop(char* to_connect_ip) {
 
     char buf[STRLEN];
     while (true) {
-        clear_buf(buf);
         loop_event e;
         e.type = loop_event_enum;
 
-        print_wait();
+        print_msg("Wait your turn...", 16, false);
         recv_loop_event_from(SOCKET, &e);
         if (e.type == surr_event_enum) {
             send_loop_event_to(SOCKET, &e);
-            print_endgame(true);
+            print_msg("Congrats, winner!", 16, true);
             break;
         }
         shoot(MY_ACT_PTR, e.row, e.col);
         refresh_maps(MY_MAP, ENEMY_MAP);
-        scanf_from_input(buf);
-        if (parse_to_coords(buf, &e.row, &e.col) == SURRENDER) {
-            e.type = surr_event_enum;
-            send_loop_event_to(SOCKET, &e);
-            print_endgame(false);
+
+        bool is_surr = false;
+        while (true) {
+            clear_buf(buf);
+            scanf_from_input(buf);
+            int pv = parse_to_coords(buf, &e.row, &e.col);
+            if (pv == COORDS) {
+                break;
+            } else if (pv == SURRENDER) {
+                e.type = surr_event_enum;
+                send_loop_event_to(SOCKET, &e);
+                print_msg("You have lost!", 12, true);
+                is_surr = true;
+                break;
+            } else {
+                print_msg("Invalid coords", 12, true);
+            }
+        }
+        if (is_surr) {
             break;
         }
+
         shoot(ENEMY_ACT_PTR, e.row, e.col);
         refresh_maps(MY_MAP, ENEMY_MAP); 
-        send_loop_event_to(SOCKET, &e); 
+        send_loop_event_to(SOCKET, &e);
         if (is_gameover(MY_ACT_PTR)) {
-            print_endgame(false);
+            print_msg("You have lost!", 12, true);
             break;
         }
         if (is_gameover(ENEMY_ACT_PTR)) {
-            print_endgame(true);
+            print_msg("Congrats, winner!", 16, true);
             break;
         }   
     }
@@ -205,7 +233,7 @@ void choose_gamemode() {
     }
     printf("Your host name: %s\n", hostname);
     printf("Your local ip: %s\n", hostip);
-    printf("If you want to connect to someone else, enter 1.\nIf you want to be a host, enter 2.\n");
+    printf("If you want to connect to someone else enter 1.\nIf you want to be a host, enter 2.\nTo exit enter 3.\n");
     int mode;
     scanf("%d", &mode);
     if (mode == client_enum) {
@@ -213,8 +241,10 @@ void choose_gamemode() {
         printf("Enter host's IP in local network:\n");
         scanf("%s", to_connect_ip);
         client_loop(to_connect_ip);
-    } else {
+    } else if (mode == host_enum) {
         host_loop();
+    } else {
+        return;
     }
 }
 
