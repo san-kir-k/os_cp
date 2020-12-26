@@ -32,3 +32,6 @@ void get_map_c(Seabattle::Battlefield* bf, int** field) {
     bf->get_map_c(field);
 }
 
+void chose_alive(Seabattle::Action* act, int* row, int* col) {
+    act->chose_alive(row, col);
+}

@@ -7,7 +7,9 @@ namespace Seabattle {
     const int CRUISER_C = 2;
     const int DESTROYER_C = 3;
     const int BOAT_C = 4;
+    const int TRAP_C = 2;
 
+    const int TRAP = 5;
     const int BATTLESHIP = 4;
     const int CRUISER = 3;
     const int DESTROYER = 2;
@@ -16,6 +18,7 @@ namespace Seabattle {
     const int DEAD = -1;
     const int SHOOTED = -2;
     const int MISSED = -3;
+    const int TRIGGERED = -4;
 
     const std::vector<std::vector<int> > v1_matrix =
     {{aa, aa, aa, ~v4, ~v4, ~v4},
@@ -328,7 +331,7 @@ namespace Seabattle {
                 }
             }
         }
-        for (int i = 0; i < BOAT_C; ++i) {
+        for (int i = 0; i < BOAT_C + TRAP_C; ++i) {
             int dir = rand() % 2;
             int pos;
             if (dir == 0) {
@@ -371,6 +374,7 @@ namespace Seabattle {
                 }
             }
         }
+        _make_traps_form_boats();
     }
     std::vector<std::vector<int>> Battlefield::get_map() {
         return _map;
@@ -382,7 +386,22 @@ namespace Seabattle {
             }
         }
     }
-
+    void Battlefield::_make_traps_form_boats() {
+        for (int i = 0; i < TRAP_C; ++i) {
+            int trap = rand() % (TRAP_C + BOAT_C - i);
+            int boat_count = 0;
+            for (int j = 0; j < MSIZE; ++j) {
+                for (int k = 0; k < MSIZE; ++k) {
+                    if (_map[j][k] == BOAT) {
+                        if (boat_count == trap) {
+                            _map[j][k] = TRAP;
+                        }
+                        boat_count++;
+                    }
+                }
+            } 
+        }
+    }
     void Action::_map_update() {
         for (int i = 0; i < MSIZE; ++i) {
             for (int j = 0; j < MSIZE; ++j) {
@@ -409,6 +428,12 @@ namespace Seabattle {
                 }
                 if (_stats_map[i][j].type == cell_type::missed) {
                     _map[i][j] = MISSED;
+                }
+                if (_stats_map[i][j].type == cell_type::trap) {
+                    _map[i][j] = TRAP;
+                }
+                if (_stats_map[i][j].type == cell_type::triggered) {
+                    _map[i][j] = TRIGGERED;
                 }
             }
         }
@@ -480,7 +505,7 @@ namespace Seabattle {
             len = 2;
         } else if (_stats_map[row][col].type == cell_type::cruiser) {
             len = 3;
-        } else {
+        } else{
             len = 4;
         }
         _stats_map[row][col].type = cell_type::shooted;
@@ -503,6 +528,10 @@ namespace Seabattle {
                     _count_of_alive++;
                     _stats_map[i][j].health = 1;
                     _stats_map[i][j].type = cell_type::boat;
+                    _stats_map[i][j].dir = direction::none;
+                } else if (_map[i][j] == TRAP) {
+                    _stats_map[i][j].health = 1;
+                    _stats_map[i][j].type = cell_type::trap;
                     _stats_map[i][j].dir = direction::none;
                 } else if (_map[i][j] == 2) {
                     _count_of_alive++;
@@ -572,6 +601,23 @@ namespace Seabattle {
             }
         }
     }
+    void Action::chose_alive(int* row, int* col) {
+        srand(time(0));
+        int alive = rand() % _count_of_alive; 
+        int alive_c = 0;
+        for (int i = 0; i < MSIZE; ++i) {
+            for (int j = 0; j < MSIZE; ++j) {
+                if (_map[i][j] == BATTLESHIP || _map[i][j] == CRUISER ||
+                _map[i][j] == DESTROYER || _map[i][j] == BOAT) {
+                    if (alive_c == alive) {
+                        *row = i;
+                        *col = j;
+                    }
+                    alive_c++;
+                }
+            }
+        }
+    }
     void Action::shoot(int row, int col) {
         if (row >= MSIZE || col >= MSIZE || row < 0|| col < 0) {
             return;
@@ -586,6 +632,11 @@ namespace Seabattle {
             _stats_map[row][col].type == cell_type::battleship) {
             _count_of_alive--;
             _shoot_update(row, col);
+            _map_update();
+        }
+        if (_stats_map[row][col].type == cell_type::trap) {
+            _stats_map[row][col].health--;
+            _stats_map[row][col].type = cell_type::triggered;
             _map_update();
         }
     }

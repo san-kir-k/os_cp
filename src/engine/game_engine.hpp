@@ -13,7 +13,9 @@ namespace Seabattle {
         none,
         dead,
         shooted,
-        missed
+        missed, 
+        trap,
+        triggered
     };
     enum bin_flags {
         aa = 0b11111111,
@@ -44,6 +46,7 @@ namespace Seabattle {
             int cruisers_h_slots;
             int destroyers_h_slots;
             int boats_h_slots;
+            void _make_traps_form_boats();
             const std::vector<std::vector<int>>& _chose_matrix(int len, direction dir);
             bool _is_available(direction dir, int len, int row, int col);
             void _update(std::vector<std::vector<int>>& av_map, direction dir, int len, int row, int col);
@@ -74,6 +77,7 @@ namespace Seabattle {
             Action() = default;
             Action(int** field);
             ~Action() = default;
+            void chose_alive(int* row, int* col);
             void shoot(int row, int col);
             bool is_gameover();
     };
