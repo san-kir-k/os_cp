@@ -2,6 +2,7 @@
 
 static const int    MAX_BUF_LEN = 256;
 
+static const int    TRAP = 5;
 static const int    BATTLESHIP = 4;
 static const int    CRUISER = 3;
 static const int    DESTROYER = 2;
@@ -10,12 +11,15 @@ static const int    NONE = 0;
 static const int    DEAD = -1;
 static const int    SHOOTED = -2;
 static const int    MISSED = -3;
+static const int    TRIGGERED = -4;
 
 static const char   SHIP_CHAR = 'O';
 static const char   NONE_CHAR = '~';
 static const char   DEAD_CHAR = 'X';
 static const char   SHOOTED_CHAR = '*';
 static const char   MISSED_CHAR = '#';
+static const char   TRAP_CHAR = '^';
+static const char   TRIGGERED_CHAR = 'T';
 
 static const int    MAP_SIZE = 10;
 static const int    MAP_STR_WIDTH = 23;
@@ -44,6 +48,7 @@ WINDOW*             HELPER_WIN;
 #define NONE_PAIR       3
 #define HITTING_PAIR    4
 #define DEAD_PAIR       5
+#define TRAP_PAIR       6
 
 void gen_my_str_map(char** str_map, int** map) {
     for (int i = 0; i < MAP_STR_HEIGHT; ++i) {
@@ -94,10 +99,12 @@ void gen_my_str_map(char** str_map, int** map) {
 
     for (int i = 3, m_i = 0; i < MAP_STR_HEIGHT - 2; i++, m_i++) {
         for (int j = 2, m_j = 0; j < MAP_STR_WIDTH - 1; j += 2, m_j++) {
-            if (map[m_i][m_j] != NONE) {
-                str_map[i][j] = 'O';
+            if (map[m_i][m_j] != TRAP && map[m_i][m_j] != NONE) {
+                str_map[i][j] = SHIP_CHAR;
+            } else if (map[m_i][m_j] == TRAP) {
+                str_map[i][j] = TRAP_CHAR;
             } else {
-                str_map[i][j] = '~';
+                str_map[i][j] = NONE_CHAR;
             }
         }
     }
@@ -154,7 +161,7 @@ void gen_enemy_str_map(char** str_map) {
 
     for (int i = 3; i < MAP_STR_HEIGHT - 2; i++) {
         for (int j = 2; j < MAP_STR_WIDTH - 1; j += 2) {
-            str_map[i][j] = '~';
+            str_map[i][j] = NONE_CHAR;
         }
     }
 } 
@@ -177,7 +184,7 @@ void get_str_coords(int row, int col, int* str_r, int* str_c) {
     *str_c = start_c + 2 * col;
 }
 
-void update_str_map(char** str_map, int** map) {
+void update_str_map(char** str_map, int** map, bool is_my_map) {
     int str_r, str_c;
     for (int i = 0; i < MAP_SIZE; ++i) {
         for (int j = 0; j < MAP_SIZE; ++j) {
@@ -188,6 +195,10 @@ void update_str_map(char** str_map, int** map) {
                 str_map[str_r][str_c] = MISSED_CHAR;
             } else if (map[i][j] == SHOOTED) {
                 str_map[str_r][str_c] = SHOOTED_CHAR;
+            } else if (map[i][j] == TRAP && is_my_map) {
+                str_map[str_r][str_c] = TRAP_CHAR;
+            } else if (map[i][j] == TRIGGERED) {
+                str_map[str_r][str_c] = TRIGGERED_CHAR;
             } else {
                 continue;
             }
@@ -207,6 +218,10 @@ void print_my_map() {
                 wattron(MY_MAP_WIN, COLOR_PAIR(HITTING_PAIR));
             } else if (MY_STR_MAP[i][j] == DEAD_CHAR) {
                 wattron(MY_MAP_WIN, COLOR_PAIR(DEAD_PAIR));
+            } else if (MY_STR_MAP[i][j] == TRAP_CHAR) {
+                wattron(MY_MAP_WIN, COLOR_PAIR(TRAP_PAIR));
+            } else if (MY_STR_MAP[i][j] == TRIGGERED_CHAR) {
+                wattron(MY_MAP_WIN, COLOR_PAIR(TRAP_PAIR));
             } else {
                 wattron(MY_MAP_WIN, COLOR_PAIR(STANDART_PAIR));
             }
@@ -218,6 +233,10 @@ void print_my_map() {
                 wattroff(MY_MAP_WIN, COLOR_PAIR(HITTING_PAIR));
             } else if (MY_STR_MAP[i][j] == DEAD_CHAR) {
                 wattroff(MY_MAP_WIN, COLOR_PAIR(DEAD_PAIR));
+            } else if (MY_STR_MAP[i][j] == TRAP_CHAR) {
+                wattroff(MY_MAP_WIN, COLOR_PAIR(TRAP_PAIR));
+            } else if (MY_STR_MAP[i][j] == TRIGGERED_CHAR) {
+                wattroff(MY_MAP_WIN, COLOR_PAIR(TRAP_PAIR));
             } else {
                 wattroff(MY_MAP_WIN, COLOR_PAIR(STANDART_PAIR));
             }
@@ -240,6 +259,10 @@ void print_enemy_map() {
                 wattron(ENEMY_MAP_WIN, COLOR_PAIR(HITTING_PAIR));
             } else if (ENEMY_STR_MAP[i][j] == DEAD_CHAR) {
                 wattron(ENEMY_MAP_WIN, COLOR_PAIR(DEAD_PAIR));
+            } else if (ENEMY_STR_MAP[i][j] == TRAP_CHAR) {
+                wattron(ENEMY_MAP_WIN, COLOR_PAIR(TRAP_PAIR));
+            } else if (ENEMY_STR_MAP[i][j] == TRIGGERED_CHAR) {
+                wattron(ENEMY_MAP_WIN, COLOR_PAIR(TRAP_PAIR));
             } else {
                 wattron(ENEMY_MAP_WIN, COLOR_PAIR(STANDART_PAIR));
             }
@@ -251,6 +274,10 @@ void print_enemy_map() {
                 wattroff(ENEMY_MAP_WIN, COLOR_PAIR(HITTING_PAIR));
             } else if (ENEMY_STR_MAP[i][j] == DEAD_CHAR) {
                 wattroff(ENEMY_MAP_WIN, COLOR_PAIR(DEAD_PAIR));
+            } else if (ENEMY_STR_MAP[i][j] == TRAP_CHAR) {
+                wattroff(ENEMY_MAP_WIN, COLOR_PAIR(TRAP_PAIR));
+            } else if (ENEMY_STR_MAP[i][j] == TRIGGERED_CHAR) {
+                wattroff(ENEMY_MAP_WIN, COLOR_PAIR(TRAP_PAIR));
             } else {
                 wattroff(ENEMY_MAP_WIN, COLOR_PAIR(STANDART_PAIR));
             }
@@ -343,9 +370,17 @@ void scanf_from_input(char* buf) {
     nocbreak();
 }
 
+void show_enemy_cell(int row, int col) {
+    int str_r, str_c;
+    get_str_coords(row, col, &str_r, &str_c);
+    ENEMY_STR_MAP[str_r][str_c] = SHIP_CHAR;
+    print_enemy_map();
+    wrefresh(ENEMY_MAP_WIN);
+}
+
 void refresh_maps(int** my_map, int** enemy_map) {
-    update_str_map(MY_STR_MAP, my_map);
-    update_str_map(ENEMY_STR_MAP, enemy_map);
+    update_str_map(MY_STR_MAP, my_map, true);
+    update_str_map(ENEMY_STR_MAP, enemy_map, false);
     print_my_map();
     print_enemy_map();
     wrefresh(MY_MAP_WIN);
@@ -361,6 +396,7 @@ int init_gui(int** my_map, int** enemy_map) {
     init_pair(NONE_PAIR, COLOR_CYAN, COLOR_WHITE);
     init_pair(HITTING_PAIR, COLOR_RED, COLOR_WHITE);
     init_pair(DEAD_PAIR, COLOR_BLUE, COLOR_WHITE);
+    init_pair(TRAP_PAIR, COLOR_MAGENTA, COLOR_WHITE);
 
     MY_STR_MAP = (char**)malloc(MAP_STR_HEIGHT * sizeof(char*));
     for (int i = 0; i < MAP_STR_HEIGHT; ++i) {
@@ -434,10 +470,12 @@ int init_gui(int** my_map, int** enemy_map) {
     mvwprintw(HELPER_WIN, MY_MAP_START_X + 3, (helper_x - 14) / 2, "X - DEAD SHIP");
     mvwprintw(HELPER_WIN, MY_MAP_START_X + 5, (helper_x - 20) / 2, "* - HITTING THE SHIP");
     mvwprintw(HELPER_WIN, MY_MAP_START_X + 7, (helper_x - 8) / 2, "# - MISS");
-    mvwprintw(HELPER_WIN, MY_MAP_START_X + 9, (helper_x - 16) / 2, "~ - UNKNOWN CELL");
-    mvwprintw(HELPER_WIN, MY_MAP_START_X + 11, (helper_x - 22) / 2, "TO SURRENDER ENTER \"-1\"");
-    mvwprintw(HELPER_WIN, MY_MAP_START_X + 12, (helper_x - 24) / 2, "IN FIELD FOR INPUT COORDS");
-    mvwprintw(HELPER_WIN, MY_MAP_START_X + 14, (helper_x - 26) / 2, "ENTER COORDS IN FIELD BELOW");
+    mvwprintw(HELPER_WIN, MY_MAP_START_X + 9, (helper_x - 8) / 2, "^ - TRAP");
+    mvwprintw(HELPER_WIN, MY_MAP_START_X + 11, (helper_x - 18) / 2, "T - TRIGGERED TRAP");
+    mvwprintw(HELPER_WIN, MY_MAP_START_X + 13, (helper_x - 16) / 2, "~ - UNKNOWN CELL");
+    mvwprintw(HELPER_WIN, MY_MAP_START_X + 15, (helper_x - 22) / 2, "TO SURRENDER ENTER \"-1\"");
+    mvwprintw(HELPER_WIN, MY_MAP_START_X + 16, (helper_x - 24) / 2, "IN FIELD FOR INPUT COORDS");
+    mvwprintw(HELPER_WIN, MY_MAP_START_X + 18, (helper_x - 26) / 2, "ENTER COORDS IN FIELD BELOW");
 
     INPUT_WIN = newwin(INPUT_WIN_HEIGHT, INPUT_WIN_WIDTH, MAP_WIN_HEIGHT, 3 * MAP_WIN_WIDTH / 2 - INPUT_WIN_WIDTH / 2);
     getmaxyx(INPUT_WIN, maxy, maxx);

@@ -15,6 +15,7 @@
 typedef enum {
     init_event_enum,
     loop_event_enum,
+    show_event_enum,
     surr_event_enum,
     win_event_enum
 } e_type;
@@ -28,6 +29,8 @@ typedef struct {
     e_type type;
     int row;
     int col;
+    int rt;
+    int ct;
 } loop_event;
 
 int     get_hostinfo(char* hostname, char* hostip);

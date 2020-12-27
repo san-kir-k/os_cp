@@ -105,6 +105,14 @@ void deinit_maps() {
     free(ENEMY_MAP);
 } 
 
+bool trap_handle(int r, int c, int* tr, int* tc) {
+    if (is_trap(ENEMY_ACT_PTR, r, c)) {
+        chose_alive(MY_ACT_PTR, tr, tc);
+        return true;
+    }
+    return false;
+}
+
 void host_loop() {
     if (init_host_socket(&CONTEXT, &SOCKET, hostip, hostport) != ALL_OK) {
         exit(CLIENT_ERR);
@@ -142,6 +150,13 @@ void host_loop() {
         }
 
         shoot(ENEMY_ACT_PTR, e.row, e.col);
+        int rt, ct;
+        if (trap_handle(e.row, e.col, &rt, &ct)) {
+            e.rt = rt;
+            e.ct = ct;
+            e.type = show_event_enum;
+            // show chosed ship in our map
+        }
         refresh_maps(MY_MAP, ENEMY_MAP); 
         if (is_gameover(ENEMY_ACT_PTR)) {
             e.type = win_event_enum;
@@ -168,6 +183,10 @@ void host_loop() {
         if (e.type == surr_event_enum) {
             print_msg("Congrats, winner!", 16, true);
             break;
+        }
+        if (e.type == show_event_enum) {
+            show_enemy_cell(e.rt, e.ct);
+            e.type = loop_event_enum;
         }
         shoot(MY_ACT_PTR, e.row, e.col);
         refresh_maps(MY_MAP, ENEMY_MAP);
@@ -217,6 +236,10 @@ void client_loop(char* to_connect_ip) {
             print_msg("Congrats, winner!", 16, true);
             break;
         }
+        if (e.type == show_event_enum) {
+            show_enemy_cell(e.rt, e.ct);
+            e.type = loop_event_enum;
+        }
         shoot(MY_ACT_PTR, e.row, e.col);
         refresh_maps(MY_MAP, ENEMY_MAP);
 
@@ -242,6 +265,13 @@ void client_loop(char* to_connect_ip) {
         }
 
         shoot(ENEMY_ACT_PTR, e.row, e.col);
+        int rt, ct;
+        if (trap_handle(e.row, e.col, &rt, &ct)) {
+            e.rt = rt;
+            e.ct = ct;
+            e.type = show_event_enum;
+            // show chosed ship in our map
+        }
         refresh_maps(MY_MAP, ENEMY_MAP); 
         if (is_gameover(ENEMY_ACT_PTR)) {
             e.type = win_event_enum;

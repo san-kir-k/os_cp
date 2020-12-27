@@ -640,6 +640,9 @@ namespace Seabattle {
             _map_update();
         }
     }
+    bool Action::is_trap(int row, int col) {
+        return _map[row][col] == TRIGGERED;
+    }
     bool Action::is_gameover() {
         return _count_of_alive == 0;
     }

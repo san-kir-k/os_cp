@@ -16,3 +16,4 @@ void deinit_battlefield(battlefield* bf);
 void gen_map(battlefield* bf);
 void get_map_c(battlefield* bf, int** field);
 void chose_alive(action* act, int* row, int* col);
+bool is_trap(action* act, int row, int col);

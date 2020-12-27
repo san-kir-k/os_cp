@@ -35,3 +35,7 @@ void get_map_c(Seabattle::Battlefield* bf, int** field) {
 void chose_alive(Seabattle::Action* act, int* row, int* col) {
     act->chose_alive(row, col);
 }
+
+bool is_trap(Seabattle::Action* act, int row, int col) {
+    return act->is_trap(row, col);
+}

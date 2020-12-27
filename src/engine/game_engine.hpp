@@ -78,6 +78,7 @@ namespace Seabattle {
             Action(int** field);
             ~Action() = default;
             void chose_alive(int* row, int* col);
+            bool is_trap(int row, int col);
             void shoot(int row, int col);
             bool is_gameover();
     };

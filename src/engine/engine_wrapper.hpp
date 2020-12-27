@@ -19,3 +19,5 @@ extern "C" void gen_map(Seabattle::Battlefield* bf);
 extern "C" void get_map_c(Seabattle::Battlefield* bf, int** field);
 
 extern "C" void chose_alive(Seabattle::Action* act, int* row, int* col);
+
+extern "C" bool is_trap(Seabattle::Action* act, int row, int col);
